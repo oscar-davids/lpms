@@ -1,6 +1,7 @@
 #include "encoder.h"
 
 #include <libavcodec/avcodec.h>
+#include <libavfilter/buffersink.h>
 
 static int encode(AVCodecContext* encoder, AVFrame *frame, struct output_ctx* octx, AVStream* ost) {
 #define encode_err(msg) { \
@@ -91,6 +92,17 @@ int process_out(struct input_ctx *ictx, struct output_ctx *octx, AVCodecContext 
   }
 
   int is_video = (AVMEDIA_TYPE_VIDEO == ost->codecpar->codec_type);
+
+  // set encoding session params for this session
+  if (is_video) {
+      av_log(NULL, AV_LOG_INFO, "processing output segment %s for resolution %dx%d br %ld\n", octx->fname, encoder->width, encoder->height, (long) encoder->bit_rate);
+
+      encoder->height = av_buffersink_get_h(octx->vf.sink_ctx);
+      encoder->width = av_buffersink_get_w(octx->vf.sink_ctx);
+      if (octx->bitrate) encoder->bit_rate = encoder->rc_min_rate = encoder->rc_max_rate = encoder->rc_buffer_size = octx->bitrate;
+      av_log(NULL, AV_LOG_INFO, "Changing video encoder params to %dx%d bitrate %ld\n", encoder->width, encoder->height, (long) encoder->bit_rate);
+  }
+
   ret = filtergraph_write(inf, ictx, octx, filter, is_video);
   if (ret < 0) goto proc_cleanup;
 
