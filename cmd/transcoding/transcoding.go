@@ -46,7 +46,7 @@ func main() {
 		opts := []ffmpeg.TranscodeOptions{}
 		for i := range profs {
 			o := ffmpeg.TranscodeOptions{
-				Oname:   fmt.Sprintf("out_%s_%d_out.mkv", lbl, i),
+				Oname:   fmt.Sprintf("out_%s_%d.ts", lbl, i),
 				Profile: profs[i],
 				Accel:   accel,
 			}
