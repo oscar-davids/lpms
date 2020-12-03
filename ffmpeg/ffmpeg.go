@@ -3,13 +3,14 @@ package ffmpeg
 import (
 	"errors"
 	"fmt"
-	"github.com/golang/glog"
 	"path"
 	"path/filepath"
 	"strconv"
 	"strings"
 	"sync"
 	"unsafe"
+
+	"github.com/golang/glog"
 )
 
 // #cgo pkg-config: libavformat libavfilter libavcodec libavutil libswscale gnutls
@@ -47,9 +48,10 @@ type Transcoder struct {
 }
 
 type TranscodeOptionsIn struct {
-	Fname  string
-	Accel  Acceleration
-	Device string
+	Fname   string
+	Accel   Acceleration
+	Device  string
+	Indices string
 }
 
 type TranscodeOptions struct {
@@ -64,8 +66,10 @@ type TranscodeOptions struct {
 }
 
 type MediaInfo struct {
-	Frames int
-	Pixels int64
+	Frames    int
+	Pixels    int64
+	Positions string
+	Lengths   string
 }
 
 type TranscodeResults struct {
@@ -347,9 +351,27 @@ func (t *Transcoder) Transcode(input *TranscodeOptionsIn, ps []TranscodeOptions)
 		device = C.CString(input.Device)
 		defer C.free(unsafe.Pointer(device))
 	}
-	inp := &C.input_params{fname: fname, hw_type: hw_type, device: device,
+	var indices *C.char
+	if input.Indices != "" {
+		indices = C.CString(input.Indices)
+		defer C.free(unsafe.Pointer(indices))
+		//s := strings.Split(input.Indices, ",")
+	}
+	inp := &C.input_params{fname: fname, hw_type: hw_type, device: device, indices: indices,
 		handle: t.handle}
 	results := make([]C.output_results, len(ps))
+	for i := 0; i < len(ps); i++ {
+		posbuf := make([]byte, 256)
+		lenbuf := make([]byte, 256)
+		//results[i].positions = (*C.char)(unsafe.Pointer(&posbuf[0]))
+		//results[i].lengths = (*C.char)(unsafe.Pointer(&lenbuf[0]))
+		sposbuf := string(posbuf)
+		slenbuf := string(lenbuf)
+		results[i].positions = C.CString(sposbuf)
+		results[i].lengths = C.CString(slenbuf)
+		defer C.free(unsafe.Pointer(results[i].positions))
+		defer C.free(unsafe.Pointer(results[i].lengths))
+	}
 	decoded := &C.output_results{}
 	var (
 		paramsPointer  *C.output_params
@@ -367,8 +389,10 @@ func (t *Transcoder) Transcode(input *TranscodeOptionsIn, ps []TranscodeOptions)
 	tr := make([]MediaInfo, len(ps))
 	for i, r := range results {
 		tr[i] = MediaInfo{
-			Frames: int(r.frames),
-			Pixels: int64(r.pixels),
+			Frames:    int(r.frames),
+			Pixels:    int64(r.pixels),
+			Positions: C.GoString(r.positions),
+			Lengths:   C.GoString(r.lengths),
 		}
 	}
 	dec := MediaInfo{

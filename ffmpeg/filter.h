@@ -61,7 +61,12 @@ struct output_ctx {
   int64_t gop_time, gop_pts_len, next_kf_pts; // for gop reset
 
   output_results  *res; // data to return for this output
-
+  int indices[20];
+  int pkposition[20];
+  int pklength[20];
+  int idcount;
+  int firstpos;
+  int prebuffpos;
 };
 
 int init_video_filters(struct input_ctx *ictx, struct output_ctx *octx);

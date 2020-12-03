@@ -297,8 +297,19 @@ encode_cleanup:
   return ret;
 }
 
+int isidxpacket(int index, int count, int* indicies) {
+	int findidx = -1;
+	for (int i = 0; i < count; i++)	{
+		if (indicies[i] == index){
+			findidx = i;
+			break;
+		}
+	}
+	return findidx;
+}
 int mux(AVPacket *pkt, AVRational tb, struct output_ctx *octx, AVStream *ost)
 {
+  int ret = 0;
   pkt->stream_index = ost->index;
   if (av_cmp_q(tb, ost->time_base)) {
     av_packet_rescale_ts(pkt, tb, ost->time_base);
@@ -312,7 +323,27 @@ int mux(AVPacket *pkt, AVRational tb, struct output_ctx *octx, AVStream *ost)
       if (pkt->pts && pkt->pts == octx->drop_ts) return 0;
   }
 
-  return av_interleaved_write_frame(octx->oc, pkt);
+  int prebuffpos =  octx->oc->pb->pos + (octx->oc->pb->buf_ptr - octx->oc->pb->buffer);
+  if(octx->firstpos < 0){
+    octx->firstpos = prebuffpos;
+    av_log(NULL, AV_LOG_ERROR, "oscar --- firstpos: %d idcount:=%d\n", octx->firstpos, octx->idcount);    
+  }  
+  int npreid = pkt->stream_index;
+  ret = av_interleaved_write_frame(octx->oc, pkt);
+  if(ret >= 0 && octx->vc && npreid == octx->vi){
+    //av_log(NULL, AV_LOG_ERROR, "oscar --- --- frames: %d\n", octx->res->frames);
+    int wframenum =octx->oc->streams[octx->vi]->nb_frames;
+
+    int index = isidxpacket(wframenum, octx->idcount, octx->indices);
+    if (index > -1){
+      int curbuffpos = octx->oc->pb->pos + (octx->oc->pb->buf_ptr - octx->oc->pb->buffer);
+
+      octx->pkposition[index] = prebuffpos;
+      octx->pklength[index] = (curbuffpos - prebuffpos);
+      av_log(NULL, AV_LOG_ERROR, "oscar --- ---id: %d pkpos:%d len:%d\n", wframenum, prebuffpos, octx->pklength[index] );
+    }
+  }
+  return ret;
 }
 
 int process_out(struct input_ctx *ictx, struct output_ctx *octx, AVCodecContext *encoder, AVStream *ost,

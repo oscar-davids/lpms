@@ -272,6 +272,18 @@ whileloop_end:
   for (i = 0; i < nb_outputs; i++) {
     ret = flush_outputs(ictx, &outputs[i]);
     if (ret < 0) LPMS_ERR(transcode_cleanup, "Unable to fully flush outputs")
+    for (int j = 0; j < outputs[i].idcount; j++)
+    {
+      if(strlen(results[i].positions)>0)
+        sprintf(results[i].positions,"%s,%d", results[i].positions, outputs[i].pkposition[j]);
+      else
+        sprintf(results[i].positions,"%d", outputs[i].pkposition[j]);
+      
+      if(strlen(results[i].lengths)>0)
+        sprintf(results[i].lengths,"%s,%d", results[i].lengths, outputs[i].pklength[j]);
+      else
+        sprintf(results[i].lengths,"%d", outputs[i].pklength[j]);
+    } 
   }
 
 transcode_cleanup:
@@ -313,10 +325,36 @@ int lpms_transcode(input_params *inp, output_params *params,
       return lpms_ERR_OUTPUTS;
     }
 
+    int tmpindices[20] = {-1,};
+    int tmpindnum = 0;
+    
+    if(strlen(inp->indices) > 0 ){
+      char tmpid[10];
+      char* pstmp = inp->indices;
+      int prepos = 0;
+      int slen = 0;
+      for (int i = 0; i < strlen(inp->indices); i++)
+      {
+        if(pstmp[i] == ',' || i== strlen(inp->indices)-1){
+          slen = i-prepos;
+          if(i== strlen(inp->indices)-1) slen++;
+          memset(tmpid,0x00,10);
+          strncpy(tmpid,pstmp+prepos,slen);
+          tmpindices[tmpindnum] = atoi(tmpid);          
+          //av_log(NULL, AV_LOG_ERROR, "oscar --- index:%d: %d\n", tmpindnum, tmpindices[tmpindnum]);
+          tmpindnum++;
+          prepos = i+1;
+        }
+      }
+    }
     // Check to see if we can skip decoding
     for (i = 0; i < nb_outputs; i++) {
       if (!needs_decoder(params[i].video.name)) h->ictx.dv = ++decode_v == nb_outputs;
       if (!needs_decoder(params[i].audio.name)) h->ictx.da = ++decode_a == nb_outputs;
+      //copy indices
+      memcpy(h->outputs[i].indices,tmpindices,sizeof(int)*20);
+      h->outputs[i].idcount = tmpindnum;
+      h->outputs[i].firstpos = -1;
     }
 
     h->nb_outputs = nb_outputs;

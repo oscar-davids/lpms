@@ -46,11 +46,14 @@ typedef struct {
   // Optional hardware acceleration
   enum AVHWDeviceType hw_type;
   char *device;
+  char *indices;
 } input_params;
 
 typedef struct {
     int frames;
     int64_t pixels;
+    char *positions;
+    char *lengths;
 } output_results;
 
 enum LPMSLogLevel {
