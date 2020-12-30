@@ -6,6 +6,20 @@
 
 #include <libavutil/opt.h>
 
+int is_copy(char *encoder) {
+  return encoder && !strcmp("copy", encoder);
+}
+
+int is_drop(char *encoder) {
+  return !encoder || !strcmp("drop", encoder) || !strcmp("", encoder);
+}
+
+int needs_decoder(char *encoder) {
+  // Checks whether the given "encoder" depends on having a decoder.
+  // Do this by enumerating special cases that do *not* need encoding
+  return !(is_copy(encoder) || is_drop(encoder));
+}
+
 int init_video_filters(struct input_ctx *ictx, struct output_ctx *octx)
 {
     char args[512];

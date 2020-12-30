@@ -5,6 +5,11 @@
 #include <libavfilter/buffersrc.h>
 #include <libavfilter/buffersink.h>
 
+int is_flush_frame(AVFrame *frame)
+{
+  return -1 == frame->pts;
+}
+
 static int add_video_stream(struct output_ctx *octx, struct input_ctx *ictx)
 {
   // video stream to muxer
@@ -215,7 +220,11 @@ int open_output(struct output_ctx *octx, struct input_ctx *ictx)
     if (ret < 0) LPMS_ERR(open_output_err, "Error opening output file");
   }
 
+  //int prepos =  octx->oc->pb->pos + (octx->oc->pb->buf_ptr - octx->oc->pb->buffer);
   ret = avformat_write_header(oc, &octx->muxer->opts);
+  //int headersize =  octx->oc->pb->pos + (octx->oc->pb->buf_ptr - octx->oc->pb->buffer);
+  //av_log(NULL, AV_LOG_ERROR, "oscar --- header size: %d\n", headersize);
+
   if (ret < 0) LPMS_ERR(open_output_err, "Error writing header");
 
   return 0;

@@ -8,6 +8,7 @@ import (
 	"path"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/livepeer/lpms/ffmpeg"
 )
@@ -46,7 +47,7 @@ func getids(field []string) (int, int, int, int) {
 
 func main() {
 	if len(os.Args) != 4 {
-		panic("Usage: <input file> <directory path>")
+		panic("Usage: <input csv file> <directory source video path> <out csv file>")
 	}
 	fcsvname := os.Args[1]
 	indir := os.Args[2]
@@ -81,7 +82,7 @@ func main() {
 	defer f.Close()
 
 	if err != nil {
-		panic("Usage: <input csv file> ")
+		panic("no input csv file!")
 	}
 
 	r := csv.NewReader(f)
@@ -100,11 +101,13 @@ func main() {
 	//write header
 	//wrecord := []string{"filepath", "position", "length"}
 	wrecord := field
+	wrecord = append(wrecord, "outpath")
 	wrecord = append(wrecord, "position")
 	wrecord = append(wrecord, "length")
 
 	err = w.Write(wrecord)
-
+	lognum := 0
+	starttime := time.Now()
 	//fmt.Printf("\n ========== %v %v %v %v \n", idpath, idprofile, idmode, idindices)
 	for {
 		record, err := r.Read()
@@ -118,14 +121,16 @@ func main() {
 		indicies := record[idindices]
 		indicies = strings.ReplaceAll(indicies, "\"", "")
 
-		ofilename := filepath.Base(fname)
-		ofilename = FilenameWithoutExtension(ofilename)
+		infilename := filepath.Base(fname)
+		infilename = FilenameWithoutExtension(infilename)
+		outfilename := fmt.Sprintf("%s/%d_%s_%s_out.ts", workDir, lognum, infilename, lbl)
 
 		profs2opts := func(profs []ffmpeg.VideoProfile) []ffmpeg.TranscodeOptions {
 			opts := []ffmpeg.TranscodeOptions{}
 			for i := range profs {
 				o := ffmpeg.TranscodeOptions{
-					Oname:   fmt.Sprintf("%s/out_%s_%s_%d_out.ts", workDir, ofilename, lbl, i),
+					//Oname:   fmt.Sprintf("%s/%s_%s_%d_out.ts", workDir, infilename, lbl, i),
+					Oname:   outfilename,
 					Profile: profs[i],
 					Accel:   accel,
 				}
@@ -140,7 +145,7 @@ func main() {
 			dev = "0"
 		}
 
-		fmt.Printf("\n ========== start transcoding %v %v \n", record[idpath], indicies)
+		fmt.Printf("\n %v ========== start transcoding %v %v \n", lognum, record[idpath], indicies)
 
 		ffmpeg.InitFFmpeg()
 		//fmt.Printf("Setting fname %s encoding %d renditions with %v\n", fname, len(options), lbl)
@@ -159,6 +164,7 @@ func main() {
 				profiles[i].Name, r.Frames, r.Pixels, r.Positions, r.Lengths)
 			if i == 0 {
 				wrecord := record
+				wrecord = append(wrecord, "\""+outfilename+"\"")
 				wrecord = append(wrecord, "\""+r.Positions+"\"")
 				wrecord = append(wrecord, "\""+r.Lengths+"\"")
 				//wrecord[0] = record[idpath]
@@ -167,5 +173,12 @@ func main() {
 				err = w.Write(wrecord)
 			}
 		}
+
+		lognum++
 	}
+	endtime := time.Now()
+	elapsed := endtime.Sub(starttime)
+	fmt.Println("starttime is: ", starttime.String())
+	fmt.Println("end time is: ", endtime.String())
+	fmt.Println("elapsed time is: ", elapsed.String())
 }
