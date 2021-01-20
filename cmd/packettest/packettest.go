@@ -123,7 +123,8 @@ func main() {
 
 		infilename := filepath.Base(fname)
 		infilename = FilenameWithoutExtension(infilename)
-		outfilename := fmt.Sprintf("%s/%d_%s_%s_out.ts", workDir, lognum, infilename, lbl)
+
+		outfilename := fmt.Sprintf("%s/%05d_%s_%s_out.ts", workDir, lognum, infilename, lbl)
 
 		profs2opts := func(profs []ffmpeg.VideoProfile) []ffmpeg.TranscodeOptions {
 			opts := []ffmpeg.TranscodeOptions{}
