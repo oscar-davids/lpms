@@ -328,7 +328,7 @@ int lpms_transcode(input_params *inp, output_params *params,
     int tmpindices[20] = {-1,};
     int tmpindnum = 0;
     
-    if(strlen(inp->indices) > 0 ){
+    if(inp->indices != NULL && strlen(inp->indices) > 0 ){
       char tmpid[10];
       char* pstmp = inp->indices;
       int prepos = 0;
@@ -351,7 +351,7 @@ int lpms_transcode(input_params *inp, output_params *params,
     for (i = 0; i < nb_outputs; i++) {
       if (!needs_decoder(params[i].video.name)) h->ictx.dv = ++decode_v == nb_outputs;
       if (!needs_decoder(params[i].audio.name)) h->ictx.da = ++decode_a == nb_outputs;
-      //copy indices
+      //copy indices      
       memcpy(h->outputs[i].indices,tmpindices,sizeof(int)*20);
       h->outputs[i].idcount = tmpindnum;
       h->outputs[i].firstpos = -1;
