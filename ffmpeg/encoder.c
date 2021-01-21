@@ -335,7 +335,7 @@ int mux(AVPacket *pkt, AVRational tb, struct output_ctx *octx, AVStream *ost)
   int prebuffpos =  octx->oc->pb->pos + (octx->oc->pb->buf_ptr - octx->oc->pb->buffer);
   if(octx->firstpos < 0){
     octx->firstpos = prebuffpos;
-    av_log(NULL, AV_LOG_ERROR, "oscar --- firstpos: %d idcount:=%d\n", octx->firstpos, octx->idcount);    
+    //av_log(NULL, AV_LOG_ERROR, "oscar --- firstpos: %d idcount:=%d\n", octx->firstpos, octx->idcount);    
   }  
   int npreid = pkt->stream_index;
   ret = av_interleaved_write_frame(octx->oc, pkt);
@@ -349,7 +349,7 @@ int mux(AVPacket *pkt, AVRational tb, struct output_ctx *octx, AVStream *ost)
 
       octx->pkposition[index] = prebuffpos;
       octx->pklength[index] = (curbuffpos - prebuffpos);
-      av_log(NULL, AV_LOG_ERROR, "oscar --- ---id: %d pkpos:%d len:%d\n", wframenum, prebuffpos, octx->pklength[index] );
+      //av_log(NULL, AV_LOG_ERROR, "oscar --- ---id: %d pkpos:%d len:%d\n", wframenum, prebuffpos, octx->pklength[index] );
     }
   }
   return ret;
