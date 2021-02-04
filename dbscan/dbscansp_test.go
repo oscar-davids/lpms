@@ -11,8 +11,14 @@ type SinglePoint struct {
 	position float64
 }
 
-func (s SinglePoint) DistanceTo(c Point) float64 {
-	distance := math.Abs(c.(SinglePoint).position - s.position)
+func (s SinglePoint) DistanceTo(c Point, bls bool) float64 {
+	distance := 0.0
+	if bls == true {
+		distance = math.Abs(c.(SinglePoint).position - s.position)
+	} else {
+
+	}
+
 	return distance
 }
 
@@ -45,7 +51,7 @@ func TestFindNeighbours(t *testing.T) {
 	}
 
 	eps := 1.01
-	neighbours := findNeighbours(clusterList[0], clusterList, eps)
+	neighbours := findNeighbours(clusterList[0], clusterList, eps, true)
 	if 3 != len(neighbours) {
 		t.Error("Mismatched neighbours counts")
 	}
@@ -66,7 +72,7 @@ func TestExpandCluster(t *testing.T) {
 	minPts := 1
 	visitMap := make(map[string]bool)
 	cluster := make([]Point, 0)
-	cluster = expandCluster(cluster, clusterList, visitMap, minPts, eps)
+	cluster = expandCluster(cluster, clusterList, visitMap, minPts, eps, true)
 	if expected != len(cluster) {
 		t.Error("Mismatched cluster counts")
 	}
@@ -93,7 +99,7 @@ func TestCluster(t *testing.T) {
 func TestClusterNoData(t *testing.T) {
 	log.Println("Executing TestClusterNoData")
 
-	clusters := Cluster(3, 1.0)
+	clusters := Cluster(3, 1.0, true)
 	if 0 != len(clusters) {
 		t.Error("Mismatched cluster counts")
 	}
