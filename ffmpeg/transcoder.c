@@ -10,11 +10,11 @@
 // Not great to appropriate internal API like this...
 const int lpms_ERR_INPUT_PIXFMT = FFERRTAG('I','N','P','X');
 const int lpms_ERR_INPUT_CODEC = FFERRTAG('I','N','P','C');
+const int lpms_ERR_INPUT_NOKF = FFERRTAG('I','N','K','F');
 const int lpms_ERR_FILTERS = FFERRTAG('F','L','T','R');
 const int lpms_ERR_PACKET_ONLY = FFERRTAG('P','K','O','N');
 const int lpms_ERR_FILTER_FLUSHED = FFERRTAG('F','L','F','L');
 const int lpms_ERR_OUTPUTS = FFERRTAG('O','U','T','P');
-const int lpms_ERR_DTS = FFERRTAG('-','D','T','S');
 
 //
 //  Notes on transcoder internals:
@@ -193,7 +193,9 @@ int transcode(struct transcode_thread *h,
     if (ret == AVERROR_EOF) break;
                             // Bail out on streams that appear to be broken
     else if (lpms_ERR_PACKET_ONLY == ret) ; // keep going for stream copy
-    else if (ret < 0) LPMS_ERR(transcode_cleanup, "Could not decode; stopping");
+    else if (lpms_ERR_INPUT_NOKF == ret) {
+      LPMS_ERR(transcode_cleanup, "Could not decode; No keyframes in input");
+    } else if (ret < 0) LPMS_ERR(transcode_cleanup, "Could not decode; stopping");
     ist = ictx->ic->streams[ipkt.stream_index];
     has_frame = lpms_ERR_PACKET_ONLY != ret;
 

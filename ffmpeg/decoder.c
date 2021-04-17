@@ -22,16 +22,18 @@ static int lpms_receive_frame(struct input_ctx *ictx, AVCodecContext *dec, AVFra
     return ret;
 }
 
-static void send_first_pkt(struct input_ctx *ictx)
+static int send_first_pkt(struct input_ctx *ictx)
 {
-  if (ictx->flushed || !ictx->first_pkt) return;
+  if (ictx->flushed) return 0;
+  if (!ictx->first_pkt) return lpms_ERR_INPUT_NOKF;
 
   int ret = avcodec_send_packet(ictx->vc, ictx->first_pkt);
+  ictx->sentinel_count++;
   if (ret < 0) {
     LPMS_ERR(packet_cleanup, "Error sending flush packet");
-  } else ictx->sentinel_count++;
+  }
 packet_cleanup:
-  return;
+  return ret;
 }
 
 int process_in(struct input_ctx *ictx, AVFrame *frame, AVPacket *pkt)
@@ -88,17 +90,21 @@ dec_flush:
   // get back all sent frames, or we've made SENTINEL_MAX attempts to retrieve
   // buffered frames with no success.
   // TODO this is unnecessary for SW decoding! SW process should match audio
-  if (ictx->vc) {
+  if (ictx->vc && !ictx->flushed && ictx->pkt_diff > 0) {
     ictx->flushing = 1;
-    send_first_pkt(ictx);
+    ret = send_first_pkt(ictx);
+    if (ret < 0) {
+      ictx->flushed = 1;
+      return ret;
+    }
     ret = lpms_receive_frame(ictx, ictx->vc, frame);
     pkt->stream_index = ictx->vi;
     // Keep flushing if we haven't received all frames back but stop after SENTINEL_MAX tries.
     if (ictx->pkt_diff != 0 && ictx->sentinel_count <= SENTINEL_MAX && (!ret || ret == AVERROR(EAGAIN))) {
-        return 0; // ignore actual return value and keep flushing
+      return 0; // ignore actual return value and keep flushing
     } else {
-        ictx->flushed = 1;
-        if (!ret) return ret;
+      ictx->flushed = 1;
+      if (!ret) return ret;
     }
   }
   // Flush audio decoder.

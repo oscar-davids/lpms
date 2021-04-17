@@ -9,11 +9,11 @@
 // LPMS specific errors
 extern const int lpms_ERR_INPUT_PIXFMT;
 extern const int lpms_ERR_INPUT_CODEC;
+extern const int lpms_ERR_INPUT_NOKF;
 extern const int lpms_ERR_FILTERS;
 extern const int lpms_ERR_PACKET_ONLY;
 extern const int lpms_ERR_FILTER_FLUSHED;
 extern const int lpms_ERR_OUTPUTS;
-extern const int lpms_ERR_DTS;
 
 struct transcode_thread;
 
