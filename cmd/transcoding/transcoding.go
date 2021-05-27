@@ -48,7 +48,9 @@ func main() {
 			o := ffmpeg.TranscodeOptions{
 				Oname:   fmt.Sprintf("out_%s_%d_out.mkv", lbl, i),
 				Profile: profs[i],
-				Accel:   accel,
+				// Uncomment the following to test scene classifier
+				// Detector: &ffmpeg.DSceneAdultSoccer,
+				Accel: accel,
 			}
 			opts = append(opts, o)
 		}
@@ -77,8 +79,8 @@ func main() {
 	}
 	fmt.Printf("profile=input frames=%v pixels=%v\n", res.Decoded.Frames, res.Decoded.Pixels)
 	for i, r := range res.Encoded {
-		if r.IsDNN == true {
-			fmt.Printf("profile=%v frames=%v pixels=%v dnnfilter result =%v\n", profiles[i].Name, r.Frames, r.Pixels, r.DNNResult)
+		if r.DetectData != nil {
+			fmt.Printf("profile=%v frames=%v pixels=%v dnnfilter result =%v\n", profiles[i].Name, r.Frames, r.Pixels, r.DetectData)
 		} else {
 			fmt.Printf("profile=%v frames=%v pixels=%v\n", profiles[i].Name, r.Frames, r.Pixels)
 		}
