@@ -77,6 +77,7 @@ func main() {
 
 	t := time.Now()
 	err := ffmpeg.InitFFmpegWithDetectProfile(&ffmpeg.DSceneAdultSoccer, deviceids)
+	defer ffmpeg.ReleaseFFmpeg()
 	end := time.Now()
 
 	if err != nil {
