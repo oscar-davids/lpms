@@ -54,6 +54,14 @@ typedef struct {
 #define MAX_CLASSIFY_SIZE 10
 #define LVPDNN_FILTER_NAME "lvpdnn"
 #define LVPDNN_FILTER_META "lavfi.lvpdnn.text"
+
+typedef struct {
+    char *modelpath;
+    char *inputname;
+    char *outputname;
+    char *deviceids;
+} lvpdnn_opts;
+
 #endif
 
 typedef struct {
@@ -79,5 +87,10 @@ void lpms_init(enum LPMSLogLevel max_level);
 int  lpms_transcode(input_params *inp, output_params *params, output_results *results, int nb_outputs, output_results *decoded_results);
 struct transcode_thread* lpms_transcode_new();
 void lpms_transcode_stop(struct transcode_thread* handle);
+
+#ifdef USE_LVPDNN_
+int lpms_dnninit(lvpdnn_opts *dnn_opts);
+void lpms_dnnrelease();
+#endif
 
 #endif // _LPMS_TRANSCODER_H_
